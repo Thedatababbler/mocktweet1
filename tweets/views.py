@@ -1,11 +1,26 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.conf import settings
 from django.http import HttpResponse, JsonResponse
-
+from django.utils.http import is_safe_url 
+from .forms import TweetForm
 from .models import Tweet #.model for module in the same folder
 # Create your views here.
+ALLOWED_HOSTS = settings.ALLOWED_HOSTS
 def home_view(request, *args, **kwargs):
     #return HttpResponse("<h1>good boi</h1>")
     return render(request, 'pages/home.html', context={}, status=200)
+
+def tweet_create_view(request, *args, **kwargs):
+    form = TweetForm(request.POST or None)
+    next_url = request.POST.get('next') or None
+    if form.is_valid():
+        obj = form.save(commit=False)
+        # do other form related processing
+        obj.save()
+        if next_url != None and is_safe_url(next_url, ALLOWED_HOSTS):
+            return redirect(next_url)
+        form = TweetForm()
+    return render(request, 'components/form.html', context={"form": form})
 
 def tweet_detail_view(request, tweet_id, *args, **kwargs):
     """
